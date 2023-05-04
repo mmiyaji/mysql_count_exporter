@@ -43,11 +43,13 @@ var (
 	path         = flag.String("telemetry-path", "/metrics", "Path under which to expose metrics.")
 	dsn          = flag.String("dsn", os.Getenv("DATA_SOURCE_NAME"), "A number of seconds to wait before re-counting rows")
 	ignore       = flag.String("ignore", "", "Regex that matches table names to ignore")
+	whitelist    = flag.String("whitelist", "", "Regex that matches table names to whitelist")
 	requestGroup singleflight.Group
 )
 
 func NewMysqlCountCollector(dataSourceName string) *MysqlCountCollector {
-	db, err := sql.Open("mysql", dataSourceName)
+        log.Printf("conn mysql: %s", dataSourceName)
+        db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}
@@ -61,6 +63,7 @@ func NewMysqlCountCollector(dataSourceName string) *MysqlCountCollector {
 			Help:      "Total number of times a mysql error occurred.",
 		}, []string{"number"}),
 		ignore: regexp.MustCompilePOSIX(*ignore),
+		whitelist: regexp.MustCompilePOSIX(*whitelist),
 	}
 }
 
@@ -68,6 +71,7 @@ type MysqlCountCollector struct {
 	db           *sql.DB
 	ScrapeErrors *prometheus.CounterVec
 	ignore       *regexp.Regexp
+	whitelist    *regexp.Regexp
 }
 
 type MysqlTable struct {
@@ -143,9 +147,12 @@ func (c *MysqlCountCollector) listTables() []MysqlTable {
 			continue
 		}
 
-		if c.ignore.String() != "" && c.ignore.Match([]byte(schema+"."+table)) {
-			continue
+                if (c.whitelist.String() != "" && c.whitelist.Match([]byte(schema+"."+table))) == false {
+		       if c.ignore.String() != "" && c.ignore.Match([]byte(schema+"."+table)) {
+				continue
+			}
 		}
+		log.Printf("listing tables: %s.%s", schema, table)
 
 		tables = append(tables, MysqlTable{schema: schema, table: table})
 	}
