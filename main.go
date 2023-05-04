@@ -48,7 +48,7 @@ var (
 )
 
 func NewMysqlCountCollector(dataSourceName string) *MysqlCountCollector {
-        log.Printf("conn mysql: %s", dataSourceName)
+//        log.Printf("conn mysql: %s", dataSourceName)
         db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
@@ -152,7 +152,7 @@ func (c *MysqlCountCollector) listTables() []MysqlTable {
 				continue
 			}
 		}
-		log.Printf("listing tables: %s.%s", schema, table)
+//		log.Printf("listing tables: %s.%s", schema, table)
 
 		tables = append(tables, MysqlTable{schema: schema, table: table})
 	}
